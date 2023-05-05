@@ -22,6 +22,7 @@ var (
 	client, _  = tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
 	user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
 	http_proxy = os.Getenv("http_proxy")
+	proxyAuth  = os.Getenv("proxyAuth")
 )
 
 func main() {
@@ -38,6 +39,16 @@ func main() {
 	handler := gin.Default()
 	handler.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
+	})
+
+	handler.Use(func(c *gin.Context) {
+		var auth = c.GetHeader("proxyAuth")
+		if proxyAuth != auth {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		} else {
+			c.Next()
+		}
+
 	})
 
 	handler.Any("/api/*path", proxy)
